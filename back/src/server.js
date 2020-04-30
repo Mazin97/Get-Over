@@ -16,14 +16,12 @@ io.on('connection', (socket) => {
   });
 
   socket.on('NovaMensagem', (data) => {
-    socket.broadcast
-      .to(data.room)
-      .emit('MensagemRecebida', data.msg);
+    socket.broadcast.to(data.room).emit('MensagemRecebida', data.msg);
   });
 });
 
 // Remember to change info between <>
-mongoose.connect('mongodb+srv://<user>:<password>@cluster0-fnr9l.mongodb.net/<cluster>?retryWrites=true&w=majority', {
+mongoose.connect(process.env.MONGO_URL, {
   useNewUrlParser: true,
 });
 mongoose.set('useCreateIndex', true);

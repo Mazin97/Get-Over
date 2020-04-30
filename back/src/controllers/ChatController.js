@@ -9,9 +9,7 @@ const ModelUsuario = require('../models/Usuario');
 
 module.exports = {
   async post(req, res) {
-    const {
-      idConversa, userId, userName, createdAt,
-    } = req.body;
+    const { idConversa, userId, userName, createdAt } = req.body;
 
     let { text } = req.body;
 
@@ -65,15 +63,22 @@ module.exports = {
 
     // #region consumo da IA
     try {
-      const urlAPI = 'https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/';
-      const AppID = '<AppId>'; // Remember to create an account and set your AppID
+      const urlAPI =
+        'https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/';
+      const AppID = process.env.APP_ID; // Remember to create an account and set your AppID
       const queryString = querystring.stringify({
-        q: text, timezoneOffset: 0, verbose: false, spellCheck: false, staging: false,
+        q: text,
+        timezoneOffset: 0,
+        verbose: false,
+        spellCheck: false,
+        staging: false,
       });
       const response = await axios.get(`${urlAPI}${AppID}?${queryString}`);
 
       if (response) {
-        score = Number((response.data.sentimentAnalysis.score * 100).toFixed(2));
+        score = Number(
+          (response.data.sentimentAnalysis.score * 100).toFixed(2)
+        );
       }
     } catch (err) {
       log4js.configure({
@@ -85,11 +90,12 @@ module.exports = {
     }
     // #endregion
 
-
-    if (userId
-      && conversa
-      && conversa.Voluntario
-      && userId.toString() === conversa.Voluntario.toString()) {
+    if (
+      userId &&
+      conversa &&
+      conversa.Voluntario &&
+      userId.toString() === conversa.Voluntario.toString()
+    ) {
       const array = [
         'Arrombado',
         'Abestado',
@@ -167,10 +173,14 @@ module.exports = {
       filter.init(array);
 
       if (filter.hasKeyword(text)) {
-        logger.error(`Voluntario: ${userId}, Conversa: ${conversa.id}, Frase inapropriada: ${text}`);
+        logger.error(
+          `Voluntario: ${userId}, Conversa: ${conversa.id}, Frase inapropriada: ${text}`
+        );
         text = await filter.replaceKeywords(text, '*');
 
-        const Voluntario = await ModelUsuario.findById(userId).select('indexVolunteer -_id');
+        const Voluntario = await ModelUsuario.findById(userId).select(
+          'indexVolunteer -_id'
+        );
         await ModelUsuario.findByIdAndUpdate(userId, {
           $set: {
             indexVolunteer: Voluntario.indexVolunteer - 1,
@@ -216,7 +226,9 @@ module.exports = {
       return res.status(400).json(error);
     }
 
-    const conversa = await ModelConversa.findById(idConversa, { mensagens: { $slice: -15 } });
+    const conversa = await ModelConversa.findById(idConversa, {
+      mensagens: { $slice: -15 },
+    });
 
     if (!conversa || !conversa.mensagens || !conversa.mensagens.length) {
       error.push('Erro: Conversa não encontrada e/ou sem mensagens.');
